@@ -62,11 +62,9 @@ long joltage2(char *in, char *end) {
   return sum;
 }
 
-int main(int argc, char **argv) {
-  size_t len;
-  char *in = input("day3.txt", &len);
-
-  char *end = in+len;
+void day3(str input) {
+  char *in = input.data;
+  char *end = in+input.len;
   printf("Part1: %d\n", joltage(in, end));
   printf("Part2: %ld\n", joltage2(in, end));
 }

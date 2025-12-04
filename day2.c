@@ -45,11 +45,9 @@ bool is_invalid_p2(long num) {
   return false;
 }
 
-int main(int argc, char **argv) {
-  time_start();
-  size_t len;
-  char *in = input("day2.txt", &len);
-  char *end = in + len;
+void day2(str input) {
+  char *in = input.data;
+  char *end = in + input.len;
   long invalid_sum_p1 = 0, invalid_sum_p2 = 0;
   while(in < end) {
     long low = atol(in);
@@ -64,6 +62,4 @@ int main(int argc, char **argv) {
     }
   }
   printf("Part1: %ld\nPart2: %ld\n", invalid_sum_p1, invalid_sum_p2);
-  time_end();
-  return 0;
 }

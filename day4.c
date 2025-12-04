@@ -61,9 +61,9 @@ void mark_remove(int x, int y) {
   arrput(removes, p);
 }
 
-int main(int argc, char **argv) {
-  size_t len;
-  char *in = input("day4.txt", &len);
+void day4(str input) {
+  size_t len = input.len;
+  char *in = input.data;
   char *nl = strchr(in, '\n');
   Grid g = {.w = nl-in, .h = len/(nl-in+1), .data=in};
   accessible = 0;
@@ -81,5 +81,4 @@ int main(int argc, char **argv) {
     }
   } while(arrlen(removes));
   printf("Part2: %d\n", total_removed);
-  return 0;
 }

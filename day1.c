@@ -35,9 +35,7 @@ void part2(int *count, int *current, int how_much) {
   }
 }
 
-int main(int argc, char **argv) {
-  char *in = input("day1.txt", NULL);
-  printf("Part1: %d\n", count(in, part1));
-  printf("Part2: %d\n", count(in, part2));
-  return 0;
+void day1(str in) {
+  printf("Part1: %d\n", count(in.data, part1));
+  printf("Part2: %d\n", count(in.data, part2));
 }

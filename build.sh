@@ -1,2 +1,3 @@
 #!/bin/sh
-cc -O3 -o $1 $1.c && time ./$1
+
+make main day$1.o && ./main $1
