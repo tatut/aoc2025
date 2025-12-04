@@ -46,6 +46,7 @@ bool is_invalid_p2(long num) {
 }
 
 int main(int argc, char **argv) {
+  time_start();
   size_t len;
   char *in = input("day2.txt", &len);
   char *end = in + len;
@@ -63,5 +64,6 @@ int main(int argc, char **argv) {
     }
   }
   printf("Part1: %ld\nPart2: %ld\n", invalid_sum_p1, invalid_sum_p2);
+  time_end();
   return 0;
 }

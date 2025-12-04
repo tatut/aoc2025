@@ -8,6 +8,7 @@
 #include <string.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
+#include <time.h>
 
 char *input(const char *file, size_t *len) {
   FILE *f = fopen(file, "r");
@@ -25,6 +26,14 @@ char *input(const char *file, size_t *len) {
   memcpy(data, map, *len);
   munmap(map, *len);
   return data;
+}
+
+clock_t started;
+
+void time_start() { started = clock(); }
+void time_end() {
+  clock_t ended = clock();
+  printf("Took %ldms\n",  (ended-started) * 1000 / CLOCKS_PER_SEC);
 }
 
 
