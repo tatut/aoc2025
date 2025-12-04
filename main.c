@@ -16,6 +16,10 @@ void time_end() {
 
 char *input(const char *file, size_t *len) {
   FILE *f = fopen(file, "r");
+  if(!f) {
+    fprintf(stderr, "Can't open input file: %s\n", file);
+    exit(1);
+  }
   struct stat fs;
   int in = fileno(f);
   if(fstat(in, &fs) == -1) {
