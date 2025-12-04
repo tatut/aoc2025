@@ -18,7 +18,10 @@ char *input(const char *file, size_t *len) {
   FILE *f = fopen(file, "r");
   struct stat fs;
   int in = fileno(f);
-  fstat(in, &fs);
+  if(fstat(in, &fs) == -1) {
+    fprintf(stderr, "Can't stat input file: %s\n", file);
+    exit(1);
+  }
   char *map = mmap(0,fs.st_size, PROT_READ, MAP_SHARED, in, 0);
   if(!map) {
     fprintf(stderr, "Can't mmap input file: %s\n", file);
