@@ -35,6 +35,27 @@ bool str_splitat(str in, const char *chars, str *split, str *rest) {
   return false;
 }
 
+bool is_space(char ch) {
+  return ch == ' ' || ch == '\t';
+}
+
+str str_ltrim(str in) {
+  while(in.len && is_space(in.data[0])) {
+    in.len--;
+    in.data = &in.data[1];
+  }
+  return in;
+}
+
+str str_rtrim(str in) {
+  while(in.len && is_space(in.data[in.len-1])) in.len--;
+  return in;
+}
+
+str str_trim(str in) {
+  return str_ltrim(str_rtrim(in));
+}
+
 long str_to_long(str s) {
   long l=0;
   for(size_t i=0;i<s.len;i++) {
