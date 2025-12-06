@@ -38,11 +38,8 @@ void day6(str input) {
         n = line;
         line = (str){0};
       }
-      //printf("n: '%.*s'  line: '%.*s'\n", (int)n.len, n.data, (int)line.len, line.data);
       char op = parse_nums ? 0 : n.data[0];
       long num = parse_nums ? str_to_long(n) : 0;
-      //if(parse_nums) printf("%d num %ld\n", i, num);
-      //else printf("%d op %c\n", i, op);
       if(arrlen(ps) <= i) {
         problem p = (problem) {0};
         arrput(p.nums, num);
