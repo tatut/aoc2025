@@ -1,9 +1,6 @@
 #ifndef aoc_h
 #define aoc_h
 
-#define STB_DS_IMPLEMENTATION
-#include "stb_ds.h"
-
 #include <stdint.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -14,6 +11,13 @@ typedef struct str {
   size_t len;
   char *data;
 } str;
+
+#endif
+
+#ifndef aoc_h_impl
+
+#define STB_DS_IMPLEMENTATION
+#include "stb_ds.h"
 
 bool str_splitat(str in, const char *chars, str *split, str *rest) {
   if(in.len == 0) return false;
@@ -131,5 +135,4 @@ str *str_lines(str in) {
     arrput(lines, rest);
   return lines;
 }
-
 #endif
