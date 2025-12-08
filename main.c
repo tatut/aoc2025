@@ -18,18 +18,18 @@ char *input(const char *file, size_t *len) {
   FILE *f = fopen(file, "r");
   if(!f) {
     fprintf(stderr, "Can't open input file: %s\n", file);
-    exit(1);
+    return NULL;
   }
   struct stat fs;
   int in = fileno(f);
   if(fstat(in, &fs) == -1) {
     fprintf(stderr, "Can't stat input file: %s\n", file);
-    exit(1);
+    return NULL;
   }
   char *map = mmap(0,fs.st_size, PROT_READ, MAP_SHARED, in, 0);
   if(!map) {
     fprintf(stderr, "Can't mmap input file: %s\n", file);
-    exit(1);
+    return NULL;
   }
   if(len) *len = fs.st_size;
 
@@ -39,22 +39,18 @@ char *input(const char *file, size_t *len) {
   return data;
 }
 
-int main(int argc, char **argv) {
-  if(argc < 2) {
-    fprintf(stderr, "Specify day, eg. ./main 1\n");
-    return 1;
-  }
-
+int run_day(int day) {
   // load input and solution module
 
+  printf("\n=== Day %d ===\n", day);
   char input_file[16];
-  snprintf(input_file, 16, "day%s.txt", argv[1]);
+  snprintf(input_file, 16, "day%d.txt", day);
 
   char module_file[16];
-  snprintf(module_file, 16, "day%s.o", argv[1]);
+  snprintf(module_file, 16, "day%d.o", day);
 
   char function_name[16];
-  snprintf(function_name, 16, "day%s", argv[1]);
+  snprintf(function_name, 16, "day%d", day);
 
   void *solution = dlopen(module_file, RTLD_NOW);
   if(!solution) {
@@ -70,10 +66,29 @@ int main(int argc, char **argv) {
 
   size_t len;
   char *in = input(input_file, &len);
+  if (!in)
+    return 1;
 
   time_start();
   dayfn((str){.len = len, .data = in});
   time_end();
   return 0;
+}
+
+int main(int argc, char **argv) {
+  if(argc < 2) {
+    fprintf(stderr, "Specify day, eg. ./main 1\n");
+    return 1;
+  }
+
+  int ret=0;
+  if(strcmp(argv[1], "all")==0) {
+    for(int i=1;i<=7;i++) {
+      ret += run_day(i);
+    }
+  } else {
+    ret = run_day(atoi(argv[1]));
+  }
+  return ret;
 
 }

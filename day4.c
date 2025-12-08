@@ -1,6 +1,4 @@
 #include "aoc.h"
-#define STB_DS_IMPLEMENTATION
-#include "stb_ds.h"
 
 typedef struct Grid {
   int w, h;
