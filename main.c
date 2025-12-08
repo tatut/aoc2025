@@ -8,9 +8,9 @@
 clock_t started;
 
 void time_start() { started = clock(); }
-void time_end() {
+void time_end(int day) {
   clock_t ended = clock();
-  printf("Took %ldms\n",  (ended-started) * 1000 / CLOCKS_PER_SEC);
+  printf("=> Day%d took %ldms\n\n", day, (ended-started) * 1000 / CLOCKS_PER_SEC);
 }
 
 
@@ -42,7 +42,6 @@ char *input(const char *file, size_t *len) {
 int run_day(int day) {
   // load input and solution module
 
-  printf("\n=== Day %d ===\n", day);
   char input_file[16];
   snprintf(input_file, 16, "day%d.txt", day);
 
@@ -71,7 +70,7 @@ int run_day(int day) {
 
   time_start();
   dayfn((str){.len = len, .data = in});
-  time_end();
+  time_end(day);
   return 0;
 }
 
@@ -83,7 +82,7 @@ int main(int argc, char **argv) {
 
   int ret=0;
   if(strcmp(argv[1], "all")==0) {
-    for(int i=1;i<=7;i++) {
+    for(int i=1;i<=8;i++) {
       ret += run_day(i);
     }
   } else {
