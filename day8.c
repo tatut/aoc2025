@@ -1,5 +1,6 @@
 #include "aoc.h"
 #include <math.h>
+#include <stdio.h>
 
 
 typedef struct box {
@@ -19,7 +20,25 @@ double distance(box a, box b) {
   return sqrt(dx*dx + dy*dy + dz*dz);
 }
 
+typedef struct pair {
+  double dist;
+  // index to boxes
+  uint16_t a;
+  uint16_t b;
+} pair;
+
 int cmp(const void *a, const void *b) { return (*(int *)b) - (*(int *)a); }
+
+int cmp_pair(const void *a, const void *b) {
+  pair *p1 = (pair *)a;
+  pair *p2 = (pair *)b;
+  if (p2->dist > p1->dist)
+    return -1;
+  else if (p1->dist > p2->dist)
+    return 1;
+  else
+    return 0;
+}
 
 void day8(str input) {
   box *bs = NULL;     // junction boxes
@@ -36,39 +55,30 @@ void day8(str input) {
     arrput(bs, b);
   }
 
-  /* Take 2 closest ones
-   * naive 2 nested loops */
-  double min_dist = 0; // dist must be greater than this, update on each match
+  /* build distance pairs for all boxes */
+  pair *ps = NULL;
+  uint16_t len = arrlen(bs);
+  arrsetcap(ps, len*len); // preallocate enough memory
+
+  for (uint16_t i = 0; i < len; i++) {
+    for (uint16_t j = i+1; j < len; j++) {
+      pair p = (pair){.a = i, .b = j, .dist = distance(bs[i], bs[j])};
+      arrput(ps, p);
+    }
+  }
+  qsort(ps, arrlen(ps), sizeof(pair), cmp_pair);
+
+
   long part1_rounds = 1000;
   long rounds=0;
-  for(;;) {
-    box a, b;
-    int closest_a, closest_b; // index
-    double closest_distance = 0.0;
-    for (int i = 0; i < arrlen(bs); i++) {
-      a = bs[i];
-      for (int j = 0; j < arrlen(bs); j++) {
-        if (j == i)
-          continue;
-        b = bs[j];
+  for (;;) {
+    pair p = ps[rounds];
 
-        double d = distance(a, b);
-        if (d > min_dist && (!closest_distance || d < closest_distance)) {
-          //printf(" closer A %ld, %ld, %ld and B %ld, %ld, %ld   (distance: %lf)\n", a.x, a.y, a.z, b.x, b.y, b.z, d);
-          closest_distance = d;
-          closest_a = i;
-          closest_b = j;
-        }
-      }
-    }
-    min_dist = closest_distance;
-    box *ca = &bs[closest_a];
-    box *cb = &bs[closest_b];
-
+    box *ca = &bs[p.a];
+    box *cb = &bs[p.b];
     if (ca->circuit && cb->circuit && ca->circuit == cb->circuit) {
       // do nothing, already in same circuit
     } else if (ca->circuit && cb->circuit && ca->circuit != cb->circuit) {
-      //  printf(" merge circuit %d with %d\n", ca->circuit, cb->circuit);
       circuit *to = &cs[ca->circuit - 1];
       circuit *from = &cs[cb->circuit - 1];
       for (int i = 0; i < arrlen(from->bs); i++) {
@@ -80,19 +90,19 @@ void day8(str input) {
       } else if (ca->circuit) {
       circuit *c = &cs[ca->circuit - 1];
       cb->circuit = ca->circuit;
-      arrput(c->bs, closest_b);
+      arrput(c->bs, p.b);
     } else if (cb->circuit) {
       circuit *c = &cs[cb->circuit - 1];
       ca->circuit = cb->circuit;
-      arrput(c->bs, closest_a);
+      arrput(c->bs, p.a);
     } else {
       // new circuit
       int id = arrlen(cs)+1;
       circuit c = {0};
       ca->circuit = id;
       cb->circuit = id;
-      arrput(c.bs, closest_a);
-      arrput(c.bs, closest_b);
+      arrput(c.bs, p.a);
+      arrput(c.bs, p.b);
       arrput(cs, c);
     }
 
