@@ -113,16 +113,7 @@ typedef struct nodecount {
   long count;
 } nodecount;
 
-bool is_ignore(u8 n_ignore, u16 *ignore, u16 val) {
-  for (int i = 0; i < n_ignore; i++) {
-    if (ignore[i] == val) {
-      return true;
-    }
-  }
-  return false;
-}
-
-long traverse(nodecount *node_count, device *ds, u16 at, u16 target, u8 n_ignore, u16 *ignore) {
+long traverse(nodecount *node_count, device *ds, u16 at, u16 target) {
   // printf(" at %d, target %d\n", at, target);
   if (node_count[at].calculated) {
     return node_count[at].count;
@@ -133,9 +124,9 @@ long traverse(nodecount *node_count, device *ds, u16 at, u16 target, u8 n_ignore
     } else {
       long count = 0;
       for (int i = 0; i < MAX_OUT; i++) {
-        if (!ds[at].out[i] || is_ignore(n_ignore, ignore, ds[at].out[i]))
+        if (!ds[at].out[i])
           continue;
-        count += traverse(node_count, ds, ds[at].out[i], target, n_ignore, ignore);
+        count += traverse(node_count, ds, ds[at].out[i], target);
       }
       node_count[at] = (nodecount){.calculated = 1, .count = count};
       return count;
@@ -172,34 +163,33 @@ void day11(str input) {
 
   nodecount *node_count = malloc(arrlen(ds) * sizeof(nodecount));
   memset(node_count, 0, arrlen(ds) * sizeof(nodecount));
-  long paths1 = traverse(node_count, ds, you, out, 0, NULL);
+  long paths1 = traverse(node_count, ds, you, out);
   printf("Part1: %ld\n", paths1);
 
   // paths from svr->dac * dac->fft * fft->out
   //   +        svr->fft * ffr->dac * dac->out
 
   memset(node_count, 0, arrlen(ds) * sizeof(nodecount));
-  long svr_dac = traverse(node_count, ds, svr, dac, 2, (u16[]){fft,out});
+  long svr_dac = traverse(node_count, ds, svr, dac);
 
   memset(node_count, 0, arrlen(ds) * sizeof(nodecount));
-  long dac_fft = traverse(node_count, ds, dac, fft, 2, (u16[]){svr,out});
+  long dac_fft = traverse(node_count, ds, dac, fft);
 
   memset(node_count, 0, arrlen(ds) * sizeof(nodecount));
-  long fft_out = traverse(node_count, ds, fft, out, 2, (u16[]){dac,svr});
+  long fft_out = traverse(node_count, ds, fft, out);
 
   memset(node_count, 0, arrlen(ds) * sizeof(nodecount));
-  long svr_fft = traverse(node_count, ds, svr, fft, 2, (u16[]){dac,out});
+  long svr_fft = traverse(node_count, ds, svr, fft);
 
   memset(node_count, 0, arrlen(ds) * sizeof(nodecount));
-  long fft_dac = traverse(node_count, ds, fft, dac, 2, (u16[]){svr,out});
+  long fft_dac = traverse(node_count, ds, fft, dac);
 
   memset(node_count, 0, arrlen(ds) * sizeof(nodecount));
-  long dac_out = traverse(node_count, ds, dac, out, 2, (u16[]){svr,fft});
-
+  long dac_out = traverse(node_count, ds, dac, out);
 
   printf("Part2: %ld\n",
          (svr_dac * dac_fft * fft_out) + (svr_fft * fft_dac * dac_out));
 
-  diagram(ds);
+  //diagram(ds);
 
 }
