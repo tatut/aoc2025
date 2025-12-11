@@ -39,6 +39,13 @@ bool str_splitat(str in, const char *chars, str *split, str *rest) {
   return false;
 }
 
+int str_indexof(str in, char ch) {
+  for(int i=0;i<in.len;i++) {
+    if(in.data[i] == ch) return i;
+  }
+  return -1;
+}
+
 bool is_space(char ch) {
   return ch == ' ' || ch == '\t';
 }
@@ -78,6 +85,14 @@ str str_drop(str haystack, size_t len) {
                 .data = &haystack.data[len]};
 }
 
+str str_from_cstr(const char *in) {
+  size_t len = strlen(in);
+  char *data = malloc(len);
+  if(!data) fprintf(stderr, "Malloc failed!");
+  memcpy(data, in, len);
+  return (str){.data = data, .len = len};
+}
+
 str str_dup(str in) {
   char *data = malloc(in.len);
   if(!data) fprintf(stderr, "Malloc failed!");
@@ -101,10 +116,15 @@ void str_free(str *s) {
   s->data = NULL;
 }
 
+bool str_eq(str a, str b) {
+  if(a.len != b.len) return false;
+  return strncmp(a.data, b.data, a.len) == 0;
+}
+
 bool str_eq_cstr(str str, const char *cstring) {
   int len = strlen(cstring);
   if(len != str.len) return false;
-  return strncmp(str.data, cstring, len);
+  return strncmp(str.data, cstring, len) == 0;
 }
 
 char str_char_at(str str, size_t idx) {
