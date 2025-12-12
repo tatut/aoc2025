@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdarg.h>
 
 typedef struct str {
   size_t len;
@@ -18,6 +19,14 @@ typedef struct str {
 
 #define STB_DS_IMPLEMENTATION
 #include "stb_ds.h"
+
+/*bool str_scan(str in, const char *fmt, ...) {
+  va_list args;
+  va_start (args, fmt);
+
+  va_end(args);
+  }*/
+
 
 bool str_splitat(str in, const char *chars, str *split, str *rest) {
   if(in.len == 0) return false;
@@ -97,6 +106,11 @@ str str_drop(str haystack, size_t len) {
   if(len > haystack.len) return (str) {.len = 0, .data=NULL};
   return (str) {.len = haystack.len - len,
                 .data = &haystack.data[len]};
+}
+
+str str_take(str big, size_t len) {
+  if(len > big.len) return big;
+  return (str) {.len = len, .data = big.data};
 }
 
 str str_from_cstr(const char *in) {
