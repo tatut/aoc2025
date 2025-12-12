@@ -1,7 +1,7 @@
 #include "aoc.h"
 
 void day7(str input) {
-  bool *beams = NULL; // sorted X positions of beam
+  bool *beams = NULL;
   long *ts;
   str line;
   str_splitat(input, "\n", &line, &input);
@@ -22,7 +22,7 @@ void day7(str input) {
 
   // Go through rest of lines
   int splits = 0;
-  while(str_splitat(input, "\n", &line, &input)) {
+  while(str_each_line(&input, &line)) {
     for(int i=0;i<line.len;i++) {
       if(line.data[i] == '^') {
         if(beams[i]) splits++;

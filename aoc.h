@@ -39,11 +39,25 @@ bool str_splitat(str in, const char *chars, str *split, str *rest) {
   return false;
 }
 
+
 int str_indexof(str in, char ch) {
   for(int i=0;i<in.len;i++) {
     if(in.data[i] == ch) return i;
   }
   return -1;
+}
+
+bool str_each_line(str *lines, str *line) {
+  if(lines->len == 0) return false;
+  if(str_splitat(*lines, "\n", line, lines))
+    return true;
+  if(lines->len) {
+    // last line
+    line->len = lines->len;
+    line->data = lines->data;
+    return true;
+  }
+  return false;
 }
 
 bool is_space(char ch) {
