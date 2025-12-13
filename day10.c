@@ -42,7 +42,7 @@ typedef uint8_t u8;
 
 // hacky, but array pointers are poor values as not assignable directly
 typedef struct joltages {
-  u16 j0, j1, j2, j3, j4, j5, j6, j7, j8, j9;
+  u16 joltage[10];
   u8 count;
 } joltages;
 
@@ -52,47 +52,11 @@ typedef struct machine {
   joltages joltage;
 } machine;
 
-void set_joltage(joltages *p, int i, u16 value) {
-  switch (i) {
-  case 0: p->j0 = value; break;
-  case 1: p->j1 = value; break;
-  case 2: p->j2 = value; break;
-  case 3: p->j3 = value; break;
-  case 4: p->j4 = value; break;
-  case 5: p->j5 = value; break;
-  case 6: p->j6 = value; break;
-  case 7: p->j7 = value; break;
-  case 8: p->j8 = value; break;
-  case 9: p->j9 = value; break;
-  default:
-    fprintf(stderr, "Max joltages is 10 (0 - 9)\n");
-    exit(1);
-  }
-  if(p->count < i+1) p->count = i+1;
-}
-
-u16 get_joltage(joltages *p, int i) {
-  switch (i) {
-  case 0: return p->j0;
-  case 1: return p->j1;
-  case 2: return p->j2;
-  case 3: return p->j3;
-  case 4: return p->j4;
-  case 5: return p->j5;
-  case 6: return p->j6;
-  case 7: return p->j7;
-  case 8: return p->j8;
-  case 9: return p->j9;
-  }
-  fprintf(stderr, "Joltage index out of range %d, 0 - 9\n", i);
-  exit(1);
-}
-
 void print_joltages(joltages *p) {
   printf("{");
   for (int i = 0; i < p->count; i++) {
     if(i) printf(",");
-    printf("%d", get_joltage(p, i));
+    printf("%d", p->joltage[i]);
   }
   printf("}\n");
 }
@@ -138,10 +102,11 @@ machine parse_machine(str in) {
   str joltage;
   i = 0;
   while (str_splitat(in, ",", &joltage, &in)) {
-    set_joltage(&m.joltage, i++, str_to_long(joltage));
+    m.joltage.joltage[i++] = str_to_long(joltage);
   }
   if (in.len)
-    set_joltage(&m.joltage, i++, str_to_long(in));
+    m.joltage.joltage[i++] = str_to_long(in);
+  m.joltage.count = i;
   return m;
 }
 
@@ -169,7 +134,7 @@ void print_machine(machine m) {
   printf(" {");
   for (int i = 0; i < m.joltage.count; i++) {
     if(i) printf(",");
-    printf("%d", get_joltage(&m.joltage, i));
+    printf("%d", m.joltage.joltage[i]);
   }
   printf("}");
 }
@@ -202,6 +167,8 @@ struct camefrom {
   u16 key;
   u16 value;
 };
+Z3_context ctx;
+Z3_sort int_sort;
 
 struct openset {
   u32 node;
@@ -219,14 +186,6 @@ long get_score(struct score *scores, u32 node) {
   }
 }
 
-long distance(machine m, u32 node) {
-  u16 indicators = node >> 16;
-  long d = 0;
-  for (int i = 0; i < LEN(m.indicators); i++) {
-    if(ON(indicators, i) != ON(m.indicators, i)) d++;
-  }
-  return d;
-}
 
 void enqueue(struct openset **openSet, struct openset item) {
   // add to array from end, while item.score > at.score
@@ -255,7 +214,7 @@ int least_presses(machine m, u16 target) {
 
   u16 node = 0; // start node is all indicators of,
   hmput(gScore, node, 0);
-  hmput(fScore, node, distance(m, 0));
+  hmput(fScore, node, 0);
 
   struct openset from = (struct openset){.node = 0, .score=0};
   enqueue(&openSet, from);
@@ -316,13 +275,23 @@ int least_presses(machine m, u16 target) {
     exit(1);
   }
   return result;
- }
+}
+
+
+
+void z3_init() {
+  Z3_config cfg = Z3_mk_config();
+  ctx = Z3_mk_context(cfg);
+  int_sort = Z3_mk_int_sort(ctx);
+}
+
+void z3_deinit() {
+  Z3_del_context(ctx);
+}
 
 
 int desired_joltage(machine m, joltages desired) {
-  Z3_config cfg = Z3_mk_config();
-  Z3_context ctx = Z3_mk_context(cfg);
-  Z3_sort int_sort = Z3_mk_int_sort(ctx);
+
   Z3_optimize s = Z3_mk_optimize(ctx);
   Z3_optimize_inc_ref(ctx, s);
 
@@ -332,7 +301,7 @@ int desired_joltage(machine m, joltages desired) {
   Z3_ast jolt[10];
 
   for(int i=0;i<desired.count;i++) {
-    jolt[i] = Z3_mk_int(ctx, get_joltage(&desired, i), int_sort);
+    jolt[i] = Z3_mk_int(ctx, desired.joltage[i], int_sort);
   }
 
   Z3_ast zero = Z3_mk_int(ctx, 0, int_sort);
@@ -378,29 +347,20 @@ int desired_joltage(machine m, joltages desired) {
   int clicks_idx = Z3_optimize_minimize(ctx, s, total_clicks);
 
 
-  int result_clicks=9999999;
-  while(1) {
-    Z3_lbool sat = Z3_optimize_check(ctx, s, 0, NULL);
-    if(sat == Z3_L_TRUE) {
-      Z3_model m = Z3_optimize_get_model(ctx, s);
-      Z3_ast tc_min = Z3_optimize_get_lower(ctx, s, clicks_idx);
-      Z3_ast tc;
+  Z3_lbool sat = Z3_optimize_check(ctx, s, 0, NULL);
+  if(sat == Z3_L_TRUE) {
+    Z3_model m = Z3_optimize_get_model(ctx, s);
+    Z3_ast tc_min = Z3_optimize_get_lower(ctx, s, clicks_idx);
+    Z3_ast tc;
 
-      //Z3_model_eval(ctx, m, tc_min, 1, &tc);
-      int clicks;
-      Z3_get_numeral_int(ctx, tc_min, &clicks);
-
-      result_clicks = clicks;
-
-      // try adding another constraint, because optimizer is buggy?
-      Z3_optimize_assert(ctx, s, Z3_mk_lt(ctx, total_clicks, Z3_mk_int(ctx, clicks, int_sort)));
-    } else  {
-      // can't make it smaller, exit
-      break;
-    }
+    //Z3_model_eval(ctx, m, tc_min, 1, &tc);
+    int clicks;
+    Z3_get_numeral_int(ctx, tc_min, &clicks);
+    return clicks;
+  } else {
+    fprintf(stderr, "Unsatisfiable!\n");
+    exit(1);
   }
-  Z3_del_context(ctx);
-  return result_clicks;
 }
 
 void day10(str input) {
@@ -412,6 +372,7 @@ void day10(str input) {
 
   int part1 = 0, part2 = 0;
 
+  z3_init();
   for (int i = 0; i < arrlen(ms); i++) {
     part1 += least_presses(ms[i], (ms[i].indicators & 0xFFFF));
     part2 += desired_joltage(ms[i], ms[i].joltage);
