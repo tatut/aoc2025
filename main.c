@@ -39,11 +39,11 @@ char *input(const char *file, size_t *len) {
   return data;
 }
 
-int run_day(int day) {
+int run_day(int day, bool example) {
   // load input and solution module
 
   char input_file[16];
-  snprintf(input_file, 16, "day%d.txt", day);
+  snprintf(input_file, 16, "day%d%s.txt", day, example ? "_ex" : "");
 
   char module_file[16];
   snprintf(module_file, 16, "day%d.o", day);
@@ -76,17 +76,18 @@ int run_day(int day) {
 
 int main(int argc, char **argv) {
   if(argc < 2) {
-    fprintf(stderr, "Specify day, eg. ./main 1\n");
+    fprintf(stderr, "Specify day, eg. ./main 1 [ex]\n");
     return 1;
   }
 
+  bool example = argc > 2 && strcmp(argv[2],"ex")==0;
   int ret=0;
   if(strcmp(argv[1], "all")==0) {
-    for(int i=1;i<=8;i++) {
-      ret += run_day(i);
+    for(int i=1;i<=12;i++) {
+      ret += run_day(i, example);
     }
   } else {
-    ret = run_day(atoi(argv[1]));
+    ret = run_day(atoi(argv[1]), example);
   }
   return ret;
 

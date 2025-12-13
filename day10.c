@@ -1,6 +1,10 @@
 #include "aoc.h"
 #include <stdio.h>
 
+#include "z3.h"
+#include "z3_api.h"
+#include "z3_optimization.h"
+
 typedef uint16_t u16;
 typedef uint32_t u32;
 typedef uint8_t u8;
@@ -82,11 +86,6 @@ u16 get_joltage(joltages *p, int i) {
   }
   fprintf(stderr, "Joltage index out of range %d, 0 - 9\n", i);
   exit(1);
-}
-
-long combined_joltage(joltages *p) {
-  return p->j0 + p->j1 + p->j2 + p->j3 + p->j4 + p->j5 + p->j6 + p->j7 + p->j8 +
-         p->j9;
 }
 
 void print_joltages(joltages *p) {
@@ -209,33 +208,9 @@ struct openset {
   long score;
 };
 
-struct score_j {
-  joltages key;
-  long value;
-};
-
-struct camefrom_j {
-  joltages key;
-  joltages value;
-};
-
-struct openset_j {
-  joltages node;
-  long score;
-};
-
 #define INITIAL_SCORE 999999999
 
 long get_score(struct score *scores, u32 node) {
-  int idx = hmgeti(scores, node);
-  if (idx == -1) {
-    return INITIAL_SCORE;
-  } else {
-    return scores[idx].value;
-  }
-}
-
-long get_score_j(struct score_j *scores, joltages node) {
   int idx = hmgeti(scores, node);
   if (idx == -1) {
     return INITIAL_SCORE;
@@ -249,14 +224,6 @@ long distance(machine m, u32 node) {
   long d = 0;
   for (int i = 0; i < LEN(m.indicators); i++) {
     if(ON(indicators, i) != ON(m.indicators, i)) d++;
-  }
-  return d;
-}
-
-long distance_j(joltages *a, joltages *b) {
-  long d = 0;
-  for (int i = 0;i < a->count; i++) {
-    d += abs( (int) get_joltage(a, i) - (int) get_joltage(b, i));
   }
   return d;
 }
@@ -280,32 +247,12 @@ void enqueue(struct openset **openSet, struct openset item) {
   }
 }
 
-void enqueue_j(struct openset_j **openSet, struct openset_j item) {
-  // add to array from end, while item.score > at.score
-  int len = arrlen(*openSet);
-  for (int i = 0; i < len; i++) {
-    if(memcmp(&(*openSet)[i].node, &item.node, sizeof(joltages))==0) return;
-  }
-  if (len == 0 || item.score < (*openSet)[len-1].score) {
-    arrput(*openSet, item);
-  } else {
-    for (int p = arrlen(*openSet)-1; p; p--) {
-      if (item.score < (*openSet)[p-1].score) {
-        arrins(*openSet, p, item);
-        return;
-      }
-    }
-    arrins(*openSet, 0, item);
-  }
-}
-
-int least_presses(machine m) {
+int least_presses(machine m, u16 target) {
   struct openset *openSet = {0};
   struct score *gScore = {0};
   struct score *fScore = {0};
   struct camefrom *cameFrom = {0};
 
-  u16 target = (m.indicators & 0xFFFF);
   u16 node = 0; // start node is all indicators of,
   hmput(gScore, node, 0);
   hmput(fScore, node, distance(m, 0));
@@ -372,175 +319,89 @@ int least_presses(machine m) {
  }
 
 
-int popcount(u16 b) {
-  int c = 0;
-  for (int i = 0; i < 16; i++) {
-    if (b & (1 << i))
-      c++;
+int desired_joltage(machine m, joltages desired) {
+  Z3_config cfg = Z3_mk_config();
+  Z3_context ctx = Z3_mk_context(cfg);
+  Z3_sort int_sort = Z3_mk_int_sort(ctx);
+  Z3_optimize s = Z3_mk_optimize(ctx);
+  Z3_optimize_inc_ref(ctx, s);
+
+  Z3_ast total_clicks = Z3_mk_const(ctx, Z3_mk_string_symbol(ctx, "total"), int_sort);
+
+  Z3_ast btn_clicks[16];
+  Z3_ast jolt[10];
+
+  for(int i=0;i<desired.count;i++) {
+    jolt[i] = Z3_mk_int(ctx, get_joltage(&desired, i), int_sort);
   }
-  return c;
-}
 
-int compare_popcount(const void *a, const void *b) {
-  u16 b1 = *(u16 *)a;
-  u16 b2 = *(u16 *)b;
-  return popcount(b2) - popcount(b1);
-}
+  Z3_ast zero = Z3_mk_int(ctx, 0, int_sort);
 
-bool below_threshold(joltages *at, joltages *target) {
-  for (int i = 0; i < at->count; i++) {
-    int at_j = get_joltage(at, i);
-    int target_j = get_joltage(target, i);
-    if( (target_j - at_j) < 3) return false; // check correct
-  }
-  return true;
-}
-
-typedef struct button_bounds {
-  int b;
-  int min;
-  int max;
-} button_bounds;
-
-int desired_joltage(machine m) {
-
-  // FIXME: use https://github.com/starwing/amoeba solver
-
-
-  // for each joltage calculate how many times a given button
-  // must be pressed at minimum and at maximum
-  button_bounds *bs = {0};
-
-  for (int i = 0; i < 16; i++) {
-    if (m.buttons[i]) {
-      button_bounds b =
-          (button_bounds){.b = m.buttons[i], .min = -1, .max = -1};
-      //
+  // create variables for button clicks
+  for(int i=0;i<16;i++) {
+    if(m.buttons[i]) {
+      char buf[4];
+      snprintf(buf, 4, "b%d", i);
+      btn_clicks[i] = Z3_mk_const(ctx, Z3_mk_string_symbol(ctx, buf), int_sort);
+      Z3_optimize_assert(ctx, s, Z3_mk_ge(ctx, btn_clicks[i], zero));
     }
   }
 
-  struct openset_j *openSet = {0};
-  struct score_j *gScore = {0};
-  struct score_j *fScore = {0};
-  struct camefrom_j *cameFrom = {0};
+  // make joltage additions, add clicks of each button that increments
+  for(int j=0;j<desired.count;j++) {
+    Z3_ast btn[16];
+    int b=0;
 
-  // sort buttons by popcount
-  qsort(&m.buttons, 16, sizeof(u16), compare_popcount);
-  for (int i = 0; i < 16; i++) {
-    printf("button %d pc %d : ", i, popcount(m.buttons[i]));
-    print_indicators(16, m.buttons[i]);
-  }
-  // click that until it would go over, then continue A*
-  long pre_rounds = 0;
-
-  joltages target = m.joltage;
-
-  joltages node = {0};
-  node.count = m.joltage.count;
-
-  // take the button that would increment the most while every joltage
-  // is below threshold, only then start doing A* for rest
-  while (below_threshold(&node, &target)) {
-    // use the button that causes biggest increment
-    joltages next = node;
-    int max_incr = 0;
-    for (int i = 0; i < 16; i++) {
-      joltages incr = node;
-      if (m.buttons[i]) {
-        int inc = 0;
-        for (int j = 0; j < 16; j++) {
-          if (ON(m.buttons[i], j)) {
-            set_joltage(&incr, j, 1 + get_joltage(&incr, j));
-            inc++;
-          }
-        }
-        if (inc > max_incr) {
-          printf("inc %d  ", inc); print_joltages(&incr);
-          next = incr;
-          max_incr = inc;
-        }
+    for(int i=0;i<16;i++) {
+      if(ON(m.buttons[i], j)) {
+        btn[b++] = btn_clicks[i];
       }
     }
-    pre_rounds++;
-    node = next;
+    //printf("joltage has button: %d\n", b);
+    Z3_ast add = Z3_mk_add(ctx, b, btn);
+    Z3_ast clicks_eq_joltage = Z3_mk_eq(ctx, add, jolt[j]); // combined clicks must equal joltage
+    Z3_optimize_assert(ctx, s, clicks_eq_joltage);
   }
-  printf("pre_rounds: %ld  node: ", pre_rounds); print_joltages(&node);
 
-  hmput(gScore, node, 0);
-  hmput(fScore, node, distance(m, 0));
-
-  struct openset_j from = (struct openset_j){.node = node, .score=0};
-  enqueue_j(&openSet, from);
-
-  long result = -1;
-
-  while (arrlen(openSet)) {
-    //printf(" openset: %ld\n", arrlen(openSet));
-    node = arrpop(openSet).node;
-    //print_joltages(&node);
-    if (memcmp(&node, &target, sizeof(joltages)) == 0) {
-      int len = 0;
-      joltages at = node;
-      int idx = hmgeti(cameFrom, at);
-      while(idx != -1) {
-        at = cameFrom[idx].value;
-        len++;
-        idx = hmgeti(cameFrom, at);
-      }
-      result = len;
-      goto done;
-    } else {
-      // go through all neighbors, every button is a possible neighbor
-      for (int i = 0; i < 16; i++) {
-        if (m.buttons[i]) {
-          //printf(" button: "); print_indicators(target.count, m.buttons[i]);
-          u16 b = m.buttons[i];
-          joltages neighbor = node;
-          for (int i = 0; i < 16; i++) {
-            if (ON(b, i)) {
-              set_joltage(&neighbor, i, 1 + get_joltage(&neighbor, i));
-            }
-          }
-
-          // check if this is valid node, if any thing is over
-          bool valid = true;
-          for (int i = 0; i < target.count; i++) {
-            if (get_joltage(&neighbor, i) > get_joltage(&target, i)) {
-              valid = false;
-              //printf("invalid state! "); print_joltages(&neighbor); print_joltages(&target);
-              break;
-            }
-          }
-
-          //printf(" new joltages: "); print_joltages(&neighbor);
-          long tentative_gScore = get_score_j(gScore, node) + 1;
-          long current_gScore = get_score_j(gScore, neighbor);
-
-          if (tentative_gScore < current_gScore) {
-            // better than previous path
-            hmput(cameFrom, neighbor, node);
-            hmput(gScore, neighbor, tentative_gScore);
-            long fs = tentative_gScore + distance_j(&target, &neighbor);
-            hmput(fScore, neighbor, fs);
-            enqueue_j(&openSet, (struct openset_j){.node = neighbor, .score=fs});
-          }
-        }
-      }
+  // make final addition for all clicks that equal total clicks
+  Z3_ast btn[16];
+  int b=0;
+  for(int i=0;i<16;i++) {
+    if(m.buttons[i]) {
+      btn[b++] = btn_clicks[i];
     }
   }
- done:
-  hmfree(gScore);
-  hmfree(fScore);
-  hmfree(cameFrom);
-  arrfree(openSet);
-  if(result == -1) {
-    fprintf(stderr, "didn't find joltage solution!");
-    exit(1);
+  Z3_ast add = Z3_mk_add(ctx, b, btn);
+  Z3_ast eq = Z3_mk_eq(ctx, add, total_clicks);
+  Z3_optimize_assert(ctx, s, eq);
+
+  int clicks_idx = Z3_optimize_minimize(ctx, s, total_clicks);
+
+
+  int result_clicks=9999999;
+  while(1) {
+    Z3_lbool sat = Z3_optimize_check(ctx, s, 0, NULL);
+    if(sat == Z3_L_TRUE) {
+      Z3_model m = Z3_optimize_get_model(ctx, s);
+      Z3_ast tc_min = Z3_optimize_get_lower(ctx, s, clicks_idx);
+      Z3_ast tc;
+
+      //Z3_model_eval(ctx, m, tc_min, 1, &tc);
+      int clicks;
+      Z3_get_numeral_int(ctx, tc_min, &clicks);
+
+      result_clicks = clicks;
+
+      // try adding another constraint, because optimizer is buggy?
+      Z3_optimize_assert(ctx, s, Z3_mk_lt(ctx, total_clicks, Z3_mk_int(ctx, clicks, int_sort)));
+    } else  {
+      // can't make it smaller, exit
+      break;
+    }
   }
-  return pre_rounds+result;
+  Z3_del_context(ctx);
+  return result_clicks;
 }
-
-
 
 void day10(str input) {
   machine *ms = {0};
@@ -552,16 +413,10 @@ void day10(str input) {
   int part1 = 0, part2 = 0;
 
   for (int i = 0; i < arrlen(ms); i++) {
-    printf("Machine %d: ", i);
-    print_machine(ms[i]);
-    printf("\n");
-
-    part1 += least_presses(ms[i]);
-    part2 += desired_joltage(ms[i]);
-    //printf(" => %d presses\n", d);
+    part1 += least_presses(ms[i], (ms[i].indicators & 0xFFFF));
+    part2 += desired_joltage(ms[i], ms[i].joltage);
   }
 
-  printf("Part1: %d\nPart2: %d\n", part1, part2); // 409 is right
-  // part2 = 15489
+  printf("Part1: %d\nPart2: %d\n", part1, part2);
 
 }
