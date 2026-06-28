@@ -363,7 +363,8 @@ int desired_joltage(machine m, joltages desired) {
   }
 }
 
-void day10(str input) {
+void day10(Day *day) {
+  str input = day->input;
   machine *ms = {0};
   str line;
   while (str_splitat(input, "\n", &line, &input)) {
@@ -377,7 +378,7 @@ void day10(str input) {
     part1 += least_presses(ms[i], (ms[i].indicators & 0xFFFF));
     part2 += desired_joltage(ms[i], ms[i].joltage);
   }
-
-  printf("Part1: %d\nPart2: %d\n", part1, part2);
+  PART1(part1);
+  PART2(part2);
 
 }

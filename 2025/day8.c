@@ -40,7 +40,8 @@ int cmp_pair(const void *a, const void *b) {
     return 0;
 }
 
-void day8(str input) {
+void day8(Day *day) {
+  str input = day->input;
   box *bs = NULL;     // junction boxes
   circuit *cs = NULL; // circuits
   str line;
@@ -115,13 +116,13 @@ void day8(str input) {
         }
       }
       qsort(sizes, arrlen(sizes), sizeof(int), cmp);
-      printf("Part1: %d\n", sizes[0] * sizes[1] * sizes[2]);
+      PART1(sizes[0] * sizes[1] * sizes[2]);
       arrfree(sizes);
     }
 
     /* check if last connection */
     if (arrlen(cs[ca->circuit-1].bs) == arrlen(bs)) {
-      printf("Part2: %ld\n", ca->x * cb->x);
+      PART2(ca->x * cb->x);
       break;
     }
   }

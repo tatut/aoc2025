@@ -35,7 +35,7 @@ void part2(int *count, int *current, int how_much) {
   }
 }
 
-void day1(str in) {
-  printf("Part1: %d\n", count(in.data, part1));
-  printf("Part2: %d\n", count(in.data, part2));
+void day1(Day *day) {
+  PART1(count(day->input.data, part1));
+  PART2(count(day->input.data, part2));
 }

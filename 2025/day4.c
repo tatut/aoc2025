@@ -59,14 +59,14 @@ void mark_remove(int x, int y) {
   arrput(removes, p);
 }
 
-void day4(str input) {
-  size_t len = input.len;
-  char *in = input.data;
+void day4(Day *day) {
+  size_t len = day->input.len;
+  char *in = day->input.data;
   char *nl = strchr(in, '\n');
   Grid g = {.w = nl-in, .h = len/(nl-in+1), .data=in};
   accessible = 0;
   accessible_rolls(&g, count_accessible);
-  printf("Part1: %d\n", accessible);
+  PART1(accessible);
 
   int total_removed=0;
   /* While removes has items, do another round */
@@ -78,5 +78,5 @@ void day4(str input) {
       grid_set(&g, removes[i].x, removes[i].y, '.');
     }
   } while(arrlen(removes));
-  printf("Part2: %d\n", total_removed);
+  PART2(total_removed);
 }

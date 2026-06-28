@@ -115,13 +115,14 @@ void diagram(device *ds) {
   fclose(f);
 }
 
-void day11(str input) {
+void day11(Day *day) {
+  str input = day->input;
   u16 you, out, svr, dac, fft;
   parse_devices(input);
 
   clear();
   long paths1 = traverse(ID("you"), ID("out"));
-  printf("Part1: %ld\n", paths1);
+  PART1(paths1);
 
   // paths from svr->dac * dac->fft * fft->out
   //   +        svr->fft * ffr->dac * dac->out
@@ -144,8 +145,7 @@ void day11(str input) {
   clear();
   long dac_out = traverse(ID("dac"), ID("out"));
 
-  printf("Part2: %ld\n",
-         (svr_dac * dac_fft * fft_out) + (svr_fft * fft_dac * dac_out));
+  PART2((svr_dac * dac_fft * fft_out) + (svr_fft * fft_dac * dac_out));
 
   //diagram(ds);
 

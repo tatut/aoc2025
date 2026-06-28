@@ -9,7 +9,8 @@ typedef struct region {
 
 
 
-void day12(str input) {
+void day12(Day *day) {
+  str input = day->input;
   region *rs = {0};
   str line;
   while(str_each_line(&input, &line)) {
@@ -38,5 +39,5 @@ void day12(str input) {
     if(needed <= rs[i].w*rs[i].h)
       fits++;
   }
-  printf("Part1: %ld\n", fits); // 495 was right, no fitting needed!
+  PART1(fits); // 495 was right, no fitting needed!
 }

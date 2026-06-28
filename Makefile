@@ -1,5 +1,5 @@
-main: main.c
-	cc -O3 -o main main.c
+main: main.c aoc.c
+	cc -O3 -o main main.c aoc.c $$(curl-config --libs)
 
 day10.o: day10.c aoc.h
 	cc -O3 -fPIC -shared -o day10.o day10.c $$(pkg-config --cflags --libs z3)

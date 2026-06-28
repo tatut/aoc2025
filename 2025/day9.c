@@ -31,7 +31,9 @@ bool is_inside(pos c1, pos c2, pos p) {
   return (p.x > min_x && p.x < max_x && p.y > min_y && p.y < max_y);
 }
 
-void day9(str input) {
+void day9(Day *day) {
+  str input = day->input;
+
   pos *ps = NULL;
   str line;
   while (str_splitat(input, "\n", &line, &input)) {
@@ -60,7 +62,7 @@ void day9(str input) {
       if(a > area) area = a;
     }
   }
-  printf("Part1: %ld\n", area); // 4725826296
+  PART1(area); // 4725826296
 
 
   /* write svg visualization of part 2 as we go */
@@ -124,7 +126,7 @@ void day9(str input) {
           "<rect x=\"%ld\" y=\"%ld\" width=\"%ld\" height=\"%ld\" style=\"fill: magenta;\" />",
           min_x, min_y, max_x-min_x, max_y-min_y);
 
-  printf("Part2: %ld\n", max_area); // 1637556834
+  PART2(max_area); // 1637556834
 
 
   fprintf(f, "</svg>");

@@ -20,7 +20,8 @@ long calc(problem p) {
   return out;
 }
 
-void day6(str input) {
+void day6(Day *day) {
+  str input = day->input;
   str full_input = input;
   problem *ps = NULL;
   str line;
@@ -56,7 +57,7 @@ void day6(str input) {
   for(int i=0;i<arrlen(ps);i++) {
     part1 += calc(ps[i]);
   }
-  printf("Part1: %ld\n", part1);
+  PART1(part1);
 
   /* Part2: parse from right to left, numbers are in columns.
    * split into an array of lines, saving max len
@@ -102,7 +103,7 @@ void day6(str input) {
   for(int i=0;i<arrlen(ps);i++) {
     part2 += calc(ps[i]);
   }
-  printf("Part2: %ld\n", part2);
+  PART2(part2);
 
 
 }

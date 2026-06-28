@@ -24,10 +24,11 @@ int compare_range(const void *a, const void *b) {
     return 0;
 }
 
-void day5(str input) {
+void day5(Day *day) {
   range *ranges = NULL;
   long *ingredients = NULL;
 
+  str input = day->input;
   str line;
   // parse fresh ranges
   while (str_splitat(input, "\n", &line, &input)) {
@@ -49,7 +50,7 @@ void day5(str input) {
   for (size_t i = 0; i < len; i++) {
     if(fresh(ranges, ingredients[i])) fresh_count++;
   }
-  printf("Part1: %ld\n", fresh_count);
+  PART1(fresh_count);
 
   /* count unique items in ranges */
   range *unique = NULL;
@@ -71,6 +72,5 @@ void day5(str input) {
     }
   }
   unique_count += (1 + (prev.high - prev.low));
-
-  printf("Part2: %ld\n", unique_count);
+  PART2(unique_count);
 }

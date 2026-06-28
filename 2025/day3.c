@@ -62,9 +62,9 @@ long joltage2(char *in, char *end) {
   return sum;
 }
 
-void day3(str input) {
-  char *in = input.data;
-  char *end = in+input.len;
-  printf("Part1: %d\n", joltage(in, end));
-  printf("Part2: %ld\n", joltage2(in, end));
+void day3(Day *day) {
+  char *in = day->input.data;
+  char *end = in+day->input.len;
+  PART1(joltage(in, end));
+  PART2(joltage2(in, end));
 }

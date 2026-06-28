@@ -7,7 +7,7 @@ void set_long_answer(Answer *a, long ans) {
 
 void set_str_answer(Answer *a, str ans) {
   a->type = STR_ANSWER;
-  a->answer.str_answer = ans;
+  a->answer.str_answer = str_dup(ans);
 }
 
 #define STB_DS_IMPLEMENTATION
@@ -20,6 +20,58 @@ void set_str_answer(Answer *a, str ans) {
   va_end(args);
   }*/
 
+bool str_scan(const char *fmt, str in, ...) {
+  va_list args;
+  va_start(args, in);
+  const char *at = fmt;
+  while (in.len) {
+    //printf("SCAN:\n  >>%s\n  >>%.*s\n", at, (int)in.len, in.data);
+    if(*at != '%') {
+      if(*at != in.data[0]) goto fail;
+      in = str_drop(in, 1);
+      at++;
+    } else {
+      // a format specifier like %s
+      at++;
+      if(*at == 's') {
+        str *to = va_arg(args, str*);
+        // read input until the next char (or end of string)
+        char delim[2] = {0,0};
+        if (*(at + 1) == 0) {
+          // end of input, the string is the whole rest
+          *to = in;
+          goto done;
+        } else {
+          delim[0] = *(at+1);
+        }
+        if(!str_splitat(in, delim, to, &in)) goto fail;
+        at += 2;
+      } else if (*at == 'l' && *(at + 1) == 'd') {
+        at += 2;
+        // read long
+        if (in.data[0] == '-' || is_digit(in.data[0])) {
+          long *to = va_arg(args, long*);
+          *to = str_to_long_rest(in, &in);
+        } else {
+          goto fail;
+        }
+      } else if (*at == '%') {
+        // literal %
+        if (in.data[0] != '%')
+          goto fail;
+        in = str_drop(in, 1);
+      }
+    }
+  }
+ done:
+  va_end(args);
+  return true;
+
+ fail:
+  va_end(args);
+  fprintf(stderr, "str_scan failed,\n   fmt left: '%s'\n input left: '%.*s'\n", at, (int)in.len, in.data);
+  return true;
+}
 
 bool str_splitat(str in, const char *chars, str *split, str *rest) {
   if(in.len == 0) return false;
@@ -63,7 +115,10 @@ bool str_each_line(str *lines, str *line) {
 }
 
 bool is_space(char ch) {
-  return ch == ' ' || ch == '\t';
+  return ch == ' ' || ch == '\t' || ch == '\n';
+}
+bool is_digit(char ch) {
+  return ch >= '0' && ch <= '9';
 }
 
 str str_ltrim(str in) {
@@ -85,11 +140,32 @@ str str_trim(str in) {
 
 long str_to_long(str s) {
   long l=0;
+  long mul=1;
+  if(s.len && s.data[0] == '-') {
+    mul = -1;
+    s = str_drop(s, 1);
+  }
   for(size_t i=0;i<s.len;i++) {
     l = (l*10) + (s.data[i]-48);
   }
-  return l;
+  return mul * l;
 }
+
+long str_to_long_rest(str s, str *rest) {
+  long l=0;
+  long mul=1;
+  if(s.len && s.data[0] == '-') {
+    mul = -1;
+    s = str_drop(s, 1);
+  }
+  while(s.len && is_digit(s.data[0])) {
+    l = (l*10) + (s.data[0]-48);
+    s = str_drop(s, 1);
+  }
+  *rest = s;
+  return mul * l;
+}
+
 bool str_startswith(str haystack, str needle) {
   if(needle.len > haystack.len) return false;
   return strncmp(haystack.data,needle.data,needle.len) == 0;

@@ -1,6 +1,7 @@
 #include "aoc.h"
 
-void day7(str input) {
+void day7(Day *day) {
+  str input = day->input;
   bool *beams = NULL;
   long *ts;
   str line;
@@ -41,6 +42,6 @@ void day7(str input) {
   for(int i=0;i<len;i++) {
     timelines += ts[i];
   }
-
-  printf("Part1: %d\nPart2: %ld\n", splits, timelines);
+  PART1(splits);
+  PART2(timelines);
 }

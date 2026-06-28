@@ -167,7 +167,7 @@ int main(int argc, char **argv) {
     return 1;
   }
 
-  bool example = argc > 2 && strcmp(argv[2],"ex")==0;
+  bool example = argc > 3 && strcmp(argv[3],"ex")==0;
 
   if (strcmp(argv[1], "all") == 0) {
     dt threads[13];
