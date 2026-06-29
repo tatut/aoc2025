@@ -2,6 +2,7 @@
 #include <stdint.h>
 
 #include "../vendor/md5-c/md5.h"
+#include "../vendor/md5-c/md5.c"
 
 void day4(Day *day) {
   char in[64];
