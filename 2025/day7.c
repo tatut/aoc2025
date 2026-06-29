@@ -1,4 +1,4 @@
-#include "aoc.h"
+#include "../aoc.h"
 
 void day7(Day *day) {
   str input = day->input;

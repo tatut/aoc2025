@@ -1,4 +1,4 @@
-#include "aoc.h"
+#include "../aoc.h"
 
 int joltage(char *in, char *end) {
   int sum = 0;

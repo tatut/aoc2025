@@ -1,4 +1,5 @@
-#include "aoc.h"
+#include "../aoc.h"
+#include "../stb_ds.h"
 
 typedef struct Grid {
   int w, h;

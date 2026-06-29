@@ -1,4 +1,5 @@
-#include "aoc.h"
+#include "../aoc.h"
+#include "../stb_ds.h"
 #include <math.h>
 #include <stdio.h>
 

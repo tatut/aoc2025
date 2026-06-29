@@ -1,11 +1,11 @@
 #include "aoc.h"
 
 #include <curl/curl.h>
+#include <stdlib.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include <time.h>
 #include <dlfcn.h>
-#include <pthread.h>
 
 clock_t started;
 
@@ -85,6 +85,16 @@ char *input(Day *day, const char *file, size_t *len) {
   return data;
 }
 
+void try_compile(int year, int day) {
+  char cmd[512];
+  snprintf(cmd, 512,
+           "cc -std=c17 -O3 -fPIC -Wl,-undefined -Wl,dynamic_lookup -shared -I "
+           ". -o %d/day%d.o %d/day%d.c $(pkg-config --cflags --libs z3) -lm",
+           year, day, year, day);
+  printf("compile: %s\n", cmd);
+  system(cmd);
+}
+
 bool run_day(Day *day, bool example) {
   // load input and solution module
 
@@ -98,9 +108,13 @@ bool run_day(Day *day, bool example) {
   snprintf(function_name, 16, "day%d", day->day);
 
   void *solution = dlopen(module_file, RTLD_NOW);
-  if(!solution) {
-    fprintf(stderr, "Can't open module: %s\n", module_file);
-    return false;
+  if (!solution) {
+    try_compile(day->year, day->day);
+    solution = dlopen(module_file, RTLD_NOW);
+    if(!solution) {
+      fprintf(stderr, "Can't open module: %s\n", module_file);
+      return false;
+    }
   }
 
   void (*dayfn)(Day*) = dlsym(solution, function_name);
@@ -127,12 +141,6 @@ typedef struct dt {
   bool example;
   Day day;
 } dt;
-
-void *day_thread(void *d) {
-  dt *t = (dt*)d;
-  run_day(&t->day, t->example);
-  return NULL;
-}
 
 void print_answer(const char *label, Answer a) {
   switch (a.type) {
@@ -168,17 +176,13 @@ int main(int argc, char **argv) {
   }
 
   bool example = argc > 3 && strcmp(argv[3],"ex")==0;
+  int year = atoi(argv[1]);
 
-  if (strcmp(argv[1], "all") == 0) {
-    dt threads[13];
-    for (int i = 1; i <= 12; i++) {
-      threads[i].day = (Day){.day = i};
-      threads[i].example = example;
-      pthread_create(&threads[i].id, NULL, day_thread, (void*)&threads[i]);
-    }
-    for (int i = 1; i <= 12; i++) {
-      pthread_join(threads[i].id, NULL);
-      print_day(threads[i].day);
+  if (strcmp(argv[2], "all") == 0) {
+    for (int i = 1; i <= last_day(year); i++) {
+      Day d = (Day){.year = year, .day = i};
+      run_day(&d, false);
+      print_day(d);
     }
   } else {
     Day d = (Day){.year = atoi(argv[1]), .day = atoi(argv[2])};

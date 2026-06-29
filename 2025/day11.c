@@ -1,5 +1,5 @@
-#include "aoc.h"
-
+#include "../aoc.h"
+#include "../stb_ds.h"
 // max input and output (observed from real input data)
 #define MAX_OUT 21
 

@@ -1,5 +1,5 @@
-#include "aoc.h"
-
+#include "../aoc.h"
+#include "../stb_ds.h"
 typedef struct range {
   long low; long high;
 } range;

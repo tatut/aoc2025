@@ -1,5 +1,5 @@
-#include "aoc.h"
-
+#include "../aoc.h"
+#include "../stb_ds.h"
 long shape_count[] = {5,7,6,7,7,7}; // hardcoded number of '#' in input shapes
 
 typedef struct region {

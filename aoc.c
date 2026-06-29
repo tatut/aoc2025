@@ -49,7 +49,7 @@ bool str_scan(const char *fmt, str in, ...) {
       } else if (*at == 'l' && *(at + 1) == 'd') {
         at += 2;
         // read long
-        if (in.data[0] == '-' || is_digit(in.data[0])) {
+        if (in.data[0] == '+' || in.data[0] == '-' || is_digit(in.data[0])) {
           long *to = va_arg(args, long*);
           *to = str_to_long_rest(in, &in);
         } else {
@@ -140,8 +140,10 @@ str str_trim(str in) {
 
 long str_to_long(str s) {
   long l=0;
-  long mul=1;
-  if(s.len && s.data[0] == '-') {
+  long mul = 1;
+  if (s.len && s.data[0] == '+') {
+    s = str_drop(s, 1);
+  } else if(s.len && s.data[0] == '-') {
     mul = -1;
     s = str_drop(s, 1);
   }
@@ -153,8 +155,10 @@ long str_to_long(str s) {
 
 long str_to_long_rest(str s, str *rest) {
   long l=0;
-  long mul=1;
-  if(s.len && s.data[0] == '-') {
+  long mul = 1;
+  if (s.len && s.data[0] == '+') {
+    s = str_drop(s, 1);
+  } else if(s.len && s.data[0] == '-') {
     mul = -1;
     s = str_drop(s, 1);
   }

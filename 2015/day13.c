@@ -42,9 +42,9 @@ void parse(str in) {
     }
     amount = mul * str_to_long_rest(line, &line);
     if (!str_startswith(line,
-                        str_constant("happiness units by sitting next to ")))
+                        str_constant(" happiness units by sitting next to ")))
       goto badline;
-    line = str_drop(line, 35);
+    line = str_drop(line, 36);
     line.len--; // remove last '.'
     int next_to = participant_id(line);
     participants[id].happy[next_to] = amount;

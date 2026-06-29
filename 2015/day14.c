@@ -15,21 +15,8 @@ void parse(str lines) {
   str line;
   while (str_each_line(&lines, &line)) {
     Reindeer r = {0};
-    if (!str_splitat(line, " ", &r.name, &line))
+    if(!str_scan("%s can fly %ld km/s for %ld seconds, but then must rest for %ld seconds.", line, &r.name, &r.speed, &r.duration, &r.rest))
       goto badline;
-    if (!str_startswith(line, str_constant("can fly ")))
-      goto badline;
-    line = str_drop(line, 8);
-    r.speed = str_to_long_rest(line, &line);
-    if (!str_startswith(line, str_constant("km/s for ")))
-      goto badline;
-    line = str_drop(line, 9);
-    r.duration = str_to_long_rest(line, &line);
-    if (!str_startswith(line, str_constant("seconds, but then must rest for ")))
-      goto badline;
-    line = str_drop(line, 32);
-    r.rest = str_to_long_rest(line, &line);
-
     reindeer[last_reindeer++] = r;
     //printf("%.*s, speed: %ld, dur: %ld, rest: %ld\n", (int)r.name.len, r.name.data, r.speed, r.duration, r.rest);
   }

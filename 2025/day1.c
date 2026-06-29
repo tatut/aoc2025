@@ -1,4 +1,4 @@
-#include "aoc.h"
+#include "../aoc.h"
 
 int count(char *in, void (*rotate)(int*, int*, int)) {
   int count = 0;
